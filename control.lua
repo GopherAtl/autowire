@@ -1,4 +1,5 @@
 require 'defines'
+require 'config'
 
 
 local default_settings={visible=false,copper=true,red=false,green=false}
@@ -6,7 +7,7 @@ local settings={}
 
 function showSettings(player)
   local settings=settings[player.name]
-  player.gui.left.autowire_flow.add{type="frame",caption="Autowire Settings",name="settings"}
+  player.gui.left.autowire_flow.add{type="frame",caption="Autowire Settings",name="settings",direction="vertical"}
   player.gui.left.autowire_flow.settings.add{type="checkbox",caption="Copper Cable",name="aw_s_copper",state=settings.copper,direction="vertical"}
   player.gui.left.autowire_flow.settings.add{type="checkbox",caption="Red Wire",name="aw_s_red",state=settings.red,direction="vertical"}
   player.gui.left.autowire_flow.settings.add{type="checkbox",caption="Green Wire",name="aw_s_green",state=settings.green,direction="vertical"}
@@ -32,16 +33,15 @@ function onGuiClick(event)
   end
 end
 
-electric_pole_types = {
-  ["small-electric-pole"]=true,
-  ["medium-electric-pole"]=true,
-  ["large-electric-pole"]=true,
-  ["substation"]=true,
-}
+local excluded_types = {}
+
+for i=1,#wiring_exceptions do
+  excluded_types[wiring_exceptions[i]]=true
+end
 
 function onBuiltEntity(event)
   local entity=event.created_entity
-  if electric_pole_types[entity.name] then
+  if entity.type=="electric-pole" and not excluded_types[entity.name] then
     local player=game.players[event.player_index]
     local settings=settings[player.name]
     if settings.red or settings.green then
