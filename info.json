@@ -1,0 +1,10 @@
+{
+  "name": "autowire",
+  "version": "0.1.0",
+  "title": "Auto-wire",
+  "author": "GopherAtl",
+  "homepage": "",
+  "contact": "gopheratl@gmail.com",
+  "description": "Gives gui for configuring automatic wiring of power poles",
+  "dependencies": ["base >= 0.12.0"]
+}
