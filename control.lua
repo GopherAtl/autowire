@@ -5,10 +5,28 @@ require 'config'
 local default_settings={visible=false,copper=true,red=false,green=false}
 local settings={}
 
-local mod_version="0.1.2"
+local mod_version="0.1.3"
+
+
+local function copy(table)
+  local res={}
+  for k,v in pairs(table) do
+    res[k]=v
+  end
+  return res
+end
+
+local function getPlayerSettings(player)
+  if settings[player.name]==nil then
+    settings[player.name]=copy(default_settings)
+    createMainGUI(player)
+  end
+  return settings[player.name]
+
+end
 
 function showSettings(player)
-  local settings=settings[player.name]
+  local settings=getPlayerSettings(player)
   player.gui.top.autowire_flow.add{type="frame",caption="",name="settings",direction="vertical", style="autowire_frame_style"}
   player.gui.top.autowire_flow.settings.add{type="checkbox",caption="Copper",name="aw_s_copper",state=settings.copper,direction="vertical",style="checkbox_5"}
   player.gui.top.autowire_flow.settings.add{type="checkbox",caption="Red",name="aw_s_red",state=settings.red,direction="vertical",style="checkbox_10"}
@@ -17,7 +35,7 @@ function showSettings(player)
 end
 
 function createMainGUI(player)
-  local settings=settings[player.name]
+  local settings=getPlayerSettings(player)
   player.gui.top.add{type="flow",name="autowire_flow",direction="vertical"}
   player.gui.top.autowire_flow.add{type="button", caption="Auto-wires",name="autowire",style="autowire_small_button_style"}
   if settings.visible then
@@ -27,7 +45,7 @@ end
 
 function onGuiClick(event)
   local player=game.players[event.player_index]
-  local settings=settings[player.name]
+  local settings=getPlayerSettings(player)
   if event.element.name=="autowire" then
     if settings.visible==true then
       player.gui.top.autowire_flow.settings.destroy()
@@ -54,7 +72,7 @@ function onBuiltEntity(event)
   local entity=event.created_entity
   if entity.type=="electric-pole" and not excluded_types[entity.name] then
     local player=game.players[event.player_index]
-    local settings=settings[player.name]
+    local settings=getPlayerSettings(player)
     if settings.red or settings.green then
       local max_red=player.get_item_count("red-wire")
       local max_green=player.get_item_count("green-wire")
@@ -97,20 +115,22 @@ function load()
     else
       settings=global.autowire.settings
     end
+  else
+    if pcall(function() p=game.player end) then
+      --single-player!
+      settings[game.player.name]=copy(default_settings)
+      createMainGUI(game.player)
+    else
+      for k,v in pairs(game.players) do
+        settings[v.name]=copy(default_settings)
+        createMainGUI(v)
+      end
+    end
   end
-
 end
 
 function save()
   global.autowire={version=mod_version,settings=settings}
-end
-
-local function copy(table)
-  local res={}
-  for k,v in pairs(table) do
-    res[k]=v
-  end
-  return res
 end
 
 function newPlayer(event)
@@ -126,6 +146,6 @@ end
 game.on_event(defines.events.on_gui_click, onGuiClick)
 
 game.on_event(defines.events.on_player_created,newPlayer)
-game.on_init(init)
+game.on_init(load)
 game.on_load(load)
 game.on_save(save)
