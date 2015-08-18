@@ -5,13 +5,24 @@ require 'config'
 local default_settings={visible=false,copper=true,red=false,green=false}
 local settings={}
 
+local mod_version="0.1.2"
+
 function showSettings(player)
   local settings=settings[player.name]
-  player.gui.left.autowire_flow.add{type="frame",caption="Autowire Settings",name="settings",direction="vertical"}
-  player.gui.left.autowire_flow.settings.add{type="checkbox",caption="Copper Cable",name="aw_s_copper",state=settings.copper,direction="vertical"}
-  player.gui.left.autowire_flow.settings.add{type="checkbox",caption="Red Wire",name="aw_s_red",state=settings.red,direction="vertical"}
-  player.gui.left.autowire_flow.settings.add{type="checkbox",caption="Green Wire",name="aw_s_green",state=settings.green,direction="vertical"}
+  player.gui.top.autowire_flow.add{type="frame",caption="",name="settings",direction="vertical", style="autowire_frame_style"}
+  player.gui.top.autowire_flow.settings.add{type="checkbox",caption="Copper",name="aw_s_copper",state=settings.copper,direction="vertical",style="checkbox_5"}
+  player.gui.top.autowire_flow.settings.add{type="checkbox",caption="Red",name="aw_s_red",state=settings.red,direction="vertical",style="checkbox_10"}
+  player.gui.top.autowire_flow.settings.add{type="checkbox",caption="Green",name="aw_s_green",state=settings.green,direction="vertical",style="checkbox_15"}
   settings.visible=true
+end
+
+function createMainGUI(player)
+  local settings=settings[player.name]
+  player.gui.top.add{type="flow",name="autowire_flow",direction="vertical"}
+  player.gui.top.autowire_flow.add{type="button", caption="Auto-wires",name="autowire",style="autowire_small_button_style"}
+  if settings.visible then
+    showSettings(player)
+  end
 end
 
 function onGuiClick(event)
@@ -19,17 +30,17 @@ function onGuiClick(event)
   local settings=settings[player.name]
   if event.element.name=="autowire" then
     if settings.visible==true then
-      player.gui.left.autowire_flow.settings.destroy()
+      player.gui.top.autowire_flow.settings.destroy()
       settings.visible=false
     else
       showSettings(player)
     end
   elseif event.element.name=="aw_s_copper" then
-    settings.copper=player.gui.left.autowire_flow.settings.aw_s_copper.state
+    settings.copper=player.gui.top.autowire_flow.settings.aw_s_copper.state
   elseif event.element.name=="aw_s_red" then
-    settings.red=player.gui.left.autowire_flow.settings.aw_s_red.state
+    settings.red=player.gui.top.autowire_flow.settings.aw_s_red.state
   elseif event.element.name=="aw_s_green" then
-    settings.green=player.gui.left.autowire_flow.settings.aw_s_green.state
+    settings.green=player.gui.top.autowire_flow.settings.aw_s_green.state
   end
 end
 
@@ -74,13 +85,24 @@ game.on_event(defines.events.on_built_entity, onBuiltEntity)
 
 function load()
   if global.autowire then
-    settings=global.autowire
+    if global.autowire.version==nil then
+      settings=global.autowire
+
+      for k,v in pairs(game.players) do
+        if v.gui.left.autowire_flow then
+          v.gui.left.autowire_flow.destroy()
+        end
+        createMainGUI(v)
+      end
+    else
+      settings=global.autowire.settings
+    end
   end
 
 end
 
 function save()
-  global.autowire=settings
+  global.autowire={version=mod_version,settings=settings}
 end
 
 local function copy(table)
@@ -97,10 +119,7 @@ function newPlayer(event)
     settings[player.name]=copy(default_settings)
   end
 
-  local settings=settings[player.name]
-
-  player.gui.left.add{type="flow",name="autowire_flow",direction="horizontal"}
-  player.gui.left.autowire_flow.add{type="button", caption="Auto-wires",name="autowire"}
+  createMainGUI(player)
 
 end
 
