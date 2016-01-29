@@ -99,11 +99,13 @@ function onBuiltEntity(event)
   end
 end
 
-game.on_event(defines.events.on_built_entity, onBuiltEntity)
+script.on_event(defines.events.on_built_entity, onBuiltEntity)
 
 function load()
   if global.autowire then
     if global.autowire.version==nil then
+      -- migrate from global.autowire[player.name] to global.autowire.settings[player.name]
+      -- NB: This will fail if player.name == "version" (sorry, Mr. Version)
       settings=global.autowire
 
       for k,v in pairs(game.players) do
@@ -112,24 +114,19 @@ function load()
         end
         createMainGUI(v)
       end
-    else
+    elseif global.autowire.settings then
+      -- Link local `settings` to the global table
       settings=global.autowire.settings
     end
   else
-    if pcall(function() p=game.player end) then
-      --single-player!
-      settings[game.player.name]=copy(default_settings)
-      createMainGUI(game.player)
-    else
-      for k,v in pairs(game.players) do
-        settings[v.name]=copy(default_settings)
-        createMainGUI(v)
-      end
+    -- Create fresh new everythings, we didn't exist before.
+    for k,v in pairs(game.players) do
+      settings[v.name]=copy(default_settings)
+      createMainGUI(v)
     end
   end
-end
 
-function save()
+  -- Finally, reset the globals (on_save used to do this)
   global.autowire={version=mod_version,settings=settings}
 end
 
@@ -143,9 +140,8 @@ function newPlayer(event)
 
 end
 
-game.on_event(defines.events.on_gui_click, onGuiClick)
+script.on_event(defines.events.on_gui_click, onGuiClick)
 
-game.on_event(defines.events.on_player_created,newPlayer)
-game.on_init(load)
-game.on_load(load)
-game.on_save(save)
+script.on_event(defines.events.on_player_created,newPlayer)
+script.on_init(load)
+script.on_configuration_changed(load)
