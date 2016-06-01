@@ -36,8 +36,10 @@ end
 
 function createMainGUI(player)
   local settings=getPlayerSettings(player)
-  player.gui.top.add{type="flow",name="autowire_flow",direction="vertical"}
-  player.gui.top.autowire_flow.add{type="button", caption="Auto-wires",name="autowire",style="autowire_small_button_style"}
+  if not player.gui.top.autowire_flow then
+    player.gui.top.add{type="flow",name="autowire_flow",direction="vertical"}
+    player.gui.top.autowire_flow.add{type="button", caption="Auto-wires",name="autowire",style="autowire_small_button_style"}
+  end
   if settings.visible then
     showSettings(player)
   end
